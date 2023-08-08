@@ -1,0 +1,12 @@
+svar: string
+ivar: number
+dvar: number
+avar: array
+uvar: untyped
+u[1]: unassigned
+$1: string
+$2: number
+s2: string
+dvar2: number
+unkvar: untyped
+x: unassigned

@@ -1,0 +1,514 @@
+# Makefile for Awka test suite.
+#
+# Copyright (C) 1999 Andrew Sumner
+# Copyright (C) 1988-1997 the Free Software Foundation, Inc.
+# 
+# This file is part of Awka, a package for translation of
+# AWK programs to ANSI-C, and a library for linking translated
+# and compiled programs.
+#
+# This file was borrowed and modified from GAWK, the GNU implementation 
+# of the AWK Programming Language.
+# 
+# This file is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+# 
+# This file is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
+
+SHELL = /bin/sh
+AWK = gawk
+CMP = cmp
+CC  = gcc -O3
+EXE = 
+MLIB = -lm
+SLIB = 
+
+AWKA = ../awka/awka
+
+MATHLIB = $(MLIB) $(SLIB)
+# for the brave at heart...
+#AWKA = ../awka/awka -d  
+#MATHLIB = $(MLIB) -L../dfa -I../dfa -ldfa
+
+CFLAGS = -L../lib -I../lib ../lib/libawka.a $(MATHLIB)
+
+srcdir = .
+
+
+###########################################################################
+
+bigtest:	basic revive-awka unix-tests awka.extensions mathextra \
+		endbig
+
+basic:		msg \
+		a_cat addcmp aloop amsal amsal2 amsal3 amsal4 amsal5 anchgsub \
+		argarray argtest2 arraycat arrayref arynocls arysubnm asgext back89 \
+		backgsub beginexit begingetline bil bil2 bslash childin clobber \
+		clsflnam compare compl conflict convfmt cox delarprm divide \
+		dubois dynlj eiso eiso2 eiso3 eiso4 eofsplit extendedchars eq \
+		fld1 fldchg fldchgnf fnarydel fnrtest foronsplit fpat fpat2 \
+		fsbs fsfw fsrs fstabplus fun functab funstack fw \
+		gensub getline getline2 getlnbuf getnr2tb getnr2tm gsubtest hh \
+		intest intprec isarray len litoct longwrds mainexit \
+		math match match2 messages mmap8k negexp next nextfile \
+		nfldstr nfset nlfldsep nlstrina nofile nors nrmax \
+		numindex numsubstr opasnidx opasnslf \
+		parsecsv pcntplus pdb_find_salt powtest prdupval print \
+		prmreuse prt1eval prtoeval rand range range2 reindops reparse \
+		resplit retest rs rsnul1nl rsre rswhite sort splitargv \
+		splitrem splitsemi splitvar splitwht sprintfc subslash substr \
+		swaplns tradanch tweakfld typeof unbuf zeroflag \
+		endbasic
+
+revive-awka:		rslen rsnull rsnull2 scgi
+
+unix-tests:		poundbang fflush getlnhd pipeio1 pipeio2 strftlng 
+
+awka.extensions:	posix posix2 manyfiles nondec asort 
+
+extra:			nasty printf1 regtest inftest 
+
+###########################################################################
+
+msg::
+	@echo '-=-=-=-=-  Basic tests =-=-=-=-'
+	@echo 
+	@date
+	@echo 
+	@echo 'Any output from "cmp" is bad news, although some differences'
+	@echo 'in floating point values are probably benign -- in particular,'
+	@echo 'some systems may omit a leading zero and the floating point'
+	@echo 'precision may lead to slightly different output in a few cases.'
+	@echo ''
+
+endbasic::
+	@echo '-=-=-=-=- Basic tests completed =-=-=-=-'
+	@echo 
+	@date
+	@echo 
+
+endbig::
+	@echo '-=-=-=-=- bigtest completed =-=-=-=-'
+	@echo 
+	@date
+	@echo 
+	@echo 'try    make extra     if you are feeling lucky'
+	@echo
+
+a_cat addcmp aloop arraycat arrayref arysubnm asort backgsub beginexit begingetline \
+bslash compl conflict convfmt cox delarprm divide dubois dynlj eiso3 eofsplit \
+extendedchars fnarydel foronsplit fun functab gensub getlnhd gnureops gsubtest intest intprec \
+isarray len match math mathextra nlstrina nofile opasnidx opasnslf pcntplus powtest \
+print prmreuse prt1eval prtoeval rand retest sort splitrem splitwht subslash \
+substr typeof zeroflag ::
+	@echo $@
+	@$(AWKA) -f $@.awk >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@./xx >_$@
+	@$(CMP) $@.ok _$@ && rm -f _$@
+
+amsal amsal3 amsal5 anchgsub arynocls asgext bil clsflnam eiso eiso2 eiso4 eq fldchg \
+fldchgnf fpat fpat2 fsfw fsrs funstack fw getline2 getnr2tb getnr2tm match2 nfset nlfldsep \
+numindex parsecsv pdb_find_salt posix2 prdupval range range2 reindops reparse \
+rsnul1nl rswhite rsnull2 splitargv splitsemi splitvar sprintfc swaplns tradanch ::
+	@echo $@
+	@$(AWKA) -f $@.awk >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@./xx $@.in >_$@
+	@$(CMP) $@.ok _$@ && rm -f _$@
+
+next::
+	@echo $@
+	@$(AWKA) -f $@.awk >$@.c
+	@$(CC)  $@.c  $(CFLAGS) -o xx
+	@./xx nextfile.in1 >_$@
+	@$(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+	
+nextfile::
+	@echo $@
+	@$(AWKA) -f $@.awk >$@.c
+	@$(CC)  $@.c  $(CFLAGS) -o xx
+	@./xx $@.in1 $@.in2 $@.in3 >_$@
+	@$(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+	
+nasty::
+	@echo $@
+	@echo '-> nasty test: sometimes fails, producing a string of 123123123 etc'
+	@echo '-> instead of aaaaa... I believe this to be caused by differences in the'
+	@echo '-> order of execution some C compilers decide on, and really its not a'
+	@echo '-> problem.  But if the test works for you, great!'
+	@$(AWKA) -f $@.awk >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@./xx >_$@
+	$(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+	
+nrmax::
+	@echo $@
+	@$(AWKA) -f $@.awk >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@# concat the input file 3 times into a single string
+	@$(AWK) '{a=a$$0} END{print a}' $@.in $@.in $@.in | ./xx >_$@
+	@$(CMP) $@.ok _$@ && rm -f _$@
+
+rsre::
+	@echo $@
+	@$(AWKA) -f $@.awk >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@./xx $@.awk >_$@
+	@$(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+
+rsnull::
+	@echo $@
+	@$(AWKA) -f $@.awk > $@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@/bin/echo -n -e "abc\0def\0hij" | ./xx > _$@
+	@$(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+
+rslen::
+	@echo $@
+	@$(AWKA) -f $@.awk > $@.c
+	@$(CC) $@.c $(CFLAGS) -o $@.exe
+	@/bin/echo -n -e "123456789" | ./$@.exe > _$@
+	@$(CMP) $(srcdir)/$@.ok _$@ && rm -f $@.exe $@.c _$@
+
+scgi::
+	@echo $@
+	@$(AWKA) -f $@.awk > $@.c
+	@$(CC) $@.c $(CFLAGS) -o $@.exe
+	@./$@.exe $@.in > $@.out
+	@$(CMP) $(srcdir)/$@.ok $@.out && rm -f $@.exe $@.c $@.out
+
+fld1::
+	@echo $@
+	@$(AWKA) -f $@.awk > $@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@$(AWK) 'BEGIN{print "abc\n3.14\nWow"}' | ./xx > _$@
+	@$(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+
+printf1::
+	@echo $@
+	@echo '-> printf1: causing grief on some platforms that unfortunately I have'
+	@echo '-> no access to.  The 4th line sometimes fails to print a 0 character,'
+	@echo '-> for reasons known only to itself.  If you can provide telnet access'
+	@echo '-> to a machine exhibiting this problem do let me know.  -andrew'
+	@$(AWKA) -f printf1.awk >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@./xx >_$@
+	@$(CMP) $(srcdir)/printf1.ok _$@ && rm -f _$@
+
+getlnbuf::
+	@echo $@
+	@$(AWKA) -f getlnbuf.awk >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@./xx getlnbuf.in >_$@
+	@$(AWKA) -f gtlnbufv.awk >gtlnbufv.c
+	@$(CC) gtlnbufv.c $(CFLAGS) -o xx
+	@./xx getlnbuf.in >_2$@
+	@$(CMP) $(srcdir)/getlnbuf.ok _$@ && $(CMP) $(srcdir)/getlnbuf.ok _2$@ && rm -f _$@ _2$@
+
+poundbang::
+	@echo $@
+	@$(AWKA) -f poundbang >$@.c;
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@./xx poundbang >_`basename $@`
+	@$(CMP) $(srcdir)/poundbang.ok _`basename $@` && rm -f _`basename $@`
+
+messages::
+	@echo $@
+	@$(AWKA) -f $(srcdir)/messages.awk >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@./xx >out2 2>out3
+	@{ $(CMP) $(srcdir)/out1.ok out1 && $(CMP) $(srcdir)/out2.ok out2 && \
+	$(CMP) $(srcdir)/out3.ok out3 && rm -f out1 out2 out3; } || \
+	{ { test -d /dev/fd || test -d /proc/self/fd; } && \
+	echo IT IS OK THAT THIS TEST FAILED; }
+
+argarray::
+	@echo $@
+	@case $(srcdir) in \
+	.)	: ;; \
+	*)	cp $(srcdir)/argarray.in . ;; \
+	esac
+	@$(AWKA) -f $(srcdir)/argarray.awk >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@TEST=test echo just a test | ./xx -v EXE=$(EXE) ./argarray.in - >_$@
+	@$(CMP) $(srcdir)/argarray.ok _$@ && rm -f _$@
+
+argtest2::
+	@echo $@
+	@$(AWKA) -f $(srcdir)/argtest2.awk >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@./xx >_$@
+	@$(AWKA) -f $(srcdir)/argtest2.awk -a "-v var=value" >$@2.c
+	@$(CC) $@2.c $(CFLAGS) -o xx
+	@./xx >>_$@
+	@$(AWKA) -f $(srcdir)/argtest2.awk -a "-We -v var=value" >$@3.c
+	@$(CC) $@3.c $(CFLAGS) -o xx
+	@./xx >>_$@
+	@$(CMP) $(srcdir)/argtest2.ok _$@ && rm -f _$@
+	
+fstabplus::
+	@echo $@
+	@$(AWKA) -f $(srcdir)/fstabplus.awk >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@echo '1		2' | ./xx >_$@
+	@$(CMP) $(srcdir)/fstabplus.ok _$@ && rm -f _$@
+
+hh::
+	@echo $@
+	@$(AWKA) -f $(srcdir)/hh.awk >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@./xx -v scalefile=hh.in >_$@
+	@$(CMP) $(srcdir)/hh.ok _$@ && rm -f _$@
+
+unbuf::
+	@echo $@
+	@$(AWKA) -f $(srcdir)/unbuf.awk >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@cat $(srcdir)/unbuf.awk | ./xx -vINFILE="$(srcdir)/unbuf.awk" unbuf.awk >_$@
+	@$(CMP) $(srcdir)/unbuf.ok _$@ && rm -f _$@
+
+
+bil2::
+	@echo $@
+	@$(AWKA) -f $(srcdir)/$@.awk >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@./xx $@.in1 >_$@
+	@$(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+
+amsal2::
+	@echo $@
+	@$(AWKA) -f $(srcdir)/$@.awk >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@./xx $(srcdir)/$@.awk >_$@
+	@$(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+
+amsal4::
+	@echo $@
+	@$(AWKA) -f $(srcdir)/$@.awk >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@./xx $(srcdir)/$@-1.in $(srcdir)/$@-2.in >_$@
+	@$(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+
+longwrds::
+	@echo $@
+	@$(AWKA) -f $(srcdir)/$@.awk >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@./xx $(srcdir)/manpage >_$@
+	@$(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+
+regtest::
+	@echo $@
+	@echo 'Some of the output from regtest is very system specific, do not'
+	@echo 'be distressed if your output differs from that distributed.'
+	@echo 'Manual inspection is called for.'
+	@AWK=`pwd`/$(AWK) CC=$(CC) MATHLIB=$(MATHLIB) $(srcdir)/regtest
+
+posix::
+	@echo $@
+	@$(AWKA) -f $(srcdir)/$@.awk >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@echo '1:2,3 4' | ./xx >_$@
+	@$(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+
+manyfiles::
+	@echo $@
+	@rm -rf junk
+	@mkdir junk
+	@$(AWK) 'BEGIN { for (i = 1; i <= 32; i++) print i, i}' >_$@
+	@$(AWKA) -f $(srcdir)/$@.awk >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@./xx _$@ _$@
+	@echo "This number better be 1 -> " | tr -d '\012\015'
+	@wc -l junk/* | $(AWK) '$$1 != 2' | wc -l
+	@rm -rf junk _$@
+
+compare::
+	@echo $@
+	@$(AWKA) -f $(srcdir)/$@.awk >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@./xx 0 1 $(srcdir)/$@.in >_$@
+	@$(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+
+rs::
+	@echo $@
+	@$(AWKA) '{ print $$1, $$2}' >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@./xx -v RS="" $(srcdir)/$@.in >_$@
+	@$(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+
+fsbs::
+	@echo $@
+	@$(AWKA) '{ print $$1, $$2 }' >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@./xx -v FS='\' $(srcdir)/$@.in >_$@
+	@$(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+
+inftest::
+	@echo $@
+	@echo This test is very machine specific...
+	@$(AWKA) -f $(srcdir)/$@.awk >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@./xx >_$@
+	@$(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+
+getline::
+	@echo $@
+	@$(AWKA) -f $(srcdir)/$@.awk >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@./xx $(srcdir)/$@.awk $(srcdir)/$@.awk >_$@
+	@$(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+
+negexp::
+	@echo $@
+	@$(AWKA) 'BEGIN { a = -2; print 10^a }' >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@./xx >_$@
+	@$(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+
+litoct::
+	@echo $@
+	@$(AWKA) -f $(srcdir)/$@.awk >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@echo ab | ./xx >_$@
+	@$(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+
+resplit::
+	@echo $@
+	@$(AWKA) '{ FS = ":"; $$0 = $$0; print $$2 }' >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@echo a:b:c d:e:f | ./xx > _$@
+	@$(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+
+childin::
+	@echo $@
+	@$(AWKA) 'BEGIN { "cat" | getline; print; close("cat") }' >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@echo hi | ./xx > _$@
+	@$(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+
+numsubstr::
+	@echo $@
+	@$(AWKA) -f $@.awk >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@-AWKPATH=$(srcdir) ./xx $(srcdir)/$@.in >_$@
+	@$(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+
+fflush::
+	@echo $@
+	@$(srcdir)/$@.sh "$(CC)" "$(MATHLIB)" >_$@
+	@$(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+
+tweakfld::
+	@echo $@
+	@$(AWKA) -f $(srcdir)/$@.awk >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@./xx $(srcdir)/$@.in >_$@
+	@rm -f errors.cleanup
+	@$(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+
+mmap8k::
+	@echo $@
+	@$(AWKA) '{ print }' >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@./xx $(srcdir)/$@.in >_$@
+	@$(CMP) $(srcdir)/$@.in _$@ && rm -f _$@
+
+back89::
+	@echo $@
+	@$(AWKA) '/a\8b/' >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@./xx $(srcdir)/$@.in >_$@
+	@$(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+
+strftlng::
+	@echo $@
+	@$(AWKA) -f $(srcdir)/$@.awk >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@TZ=UTC; export TZ; ./xx >_$@
+	@if $(CMP) -s $(srcdir)/$@.ok _$@ ; then : ; else \
+ 	TZ=UTC0; export TZ; ./xx >_$@ ; \
+	fi
+	@$(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+
+nfldstr::
+	@echo $@
+	@$(AWKA) '$$1 == 0 { print "bug" }' >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@echo | ./xx > _$@
+	@$(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+
+nors::
+	@echo $@
+	@$(AWKA) '{ print $$NF }' >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@echo A B C D E | tr -d '\012\015' | ./xx - $(srcdir)/$@.in > _$@
+	@$(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+
+pipeio1::
+	@echo $@
+	@$(AWKA) -f $(srcdir)/$@.awk >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@./xx >_$@
+	@rm -f test1 test2
+	@$(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+
+pipeio2::
+	@echo $@
+	@$(AWKA) -f $(srcdir)/$@.awk >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@./xx -v SRCDIR=$(srcdir) >_$@
+	@$(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+
+clobber::
+	@echo $@
+	@$(AWKA) -f $(srcdir)/$@.awk >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@./xx >_$@
+	@$(CMP) $(srcdir)/$@.ok seq && $(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+	@rm -f seq
+
+nondec::
+	@echo $@
+	@if grep BITOP ../config.h | grep define > /dev/null; \
+	then \
+		$(AWKA) -f $(srcdir)/$@.awk >$@.c; \
+            	$(CC) $@.c $(CFLAGS) -o xx \
+		./xx >_$@; \
+	else \
+		cp $(srcdir)/$@.ok _$@; \
+	fi
+	@$(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+
+mainexit::
+	@echo $@
+	@$(AWKA) -f $(srcdir)/$@.awk >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@(./xx $@.in ; echo $$?) >_$@
+	@$(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+
+fnrtest::
+	@echo $@
+	@$(AWKA) -f $(srcdir)/$@.awk >$@.c
+	@$(CC) $@.c $(CFLAGS) -o xx
+	@./xx $@.in $@.in $@.in >_$@
+	@$(CMP) $(srcdir)/$@.ok _$@ && rm -f _$@
+
+########################################################################
+
+clean:
+	rm -fr _* core junk out1 out2 out3 strftime.ok test1 test2 seq *~ xx xx$(EXE) *.c *.out
+
+distclean: clean
+	rm -f Makefile
+
+maintainer-clean: distclean

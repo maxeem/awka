@@ -1,0 +1,13 @@
+*.swp
+_*
+*.o
+*.so
+*.a
+lib/libawka.h
+awka/awka
+/config.*
+test/xx
+test/x.c
+lib/Makefile
+config.cache
+config.log
